@@ -8,11 +8,10 @@ import { SimulationDashboard } from './components/results/SimulationDashboard';
 import { ProbabilityChart } from './components/visualization/ProbabilityChart';
 import { AmplitudeEvolution } from './components/visualization/AmplitudeEvolution';
 import { CircuitDiagram } from './components/visualization/CircuitDiagram';
-import { BenchmarkTable } from './components/benchmark/BenchmarkTable';
 import { MarkedStatesComparison } from './components/benchmark/MarkedStatesComparison';
 import { QubitScalingCards } from './components/benchmark/QubitScalingCards';
 import { KeyFindings } from './components/benchmark/KeyFindings';
-import { SDSDegradationTable } from './components/benchmark/SDSDegradationTable';
+import { UnifiedExperimentTable } from './components/benchmark/UnifiedExperimentTable';
 import { QiskitCodePanel } from './components/code/QiskitCodePanel';
 
 type TabId = 'simulator' | 'benchmarks' | 'export';
@@ -64,8 +63,7 @@ const SimulatorView: React.FC = () => (
 
 const BenchmarksView: React.FC = () => (
   <div className="space-y-6">
-    <BenchmarkTable />
-    <SDSDegradationTable />
+    <UnifiedExperimentTable />
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <MarkedStatesComparison />
       <QubitScalingCards />
