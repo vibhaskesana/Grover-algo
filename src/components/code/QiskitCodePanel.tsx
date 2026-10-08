@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useExperiment } from '../../context/ExperimentContext';
 import { generateQiskitCode } from '../../lib/qiskit-generator';
-import { Code2, Copy, Check, Terminal } from 'lucide-react';
 
 export const QiskitCodePanel: React.FC = () => {
   const { config } = useExperiment();
@@ -21,67 +20,49 @@ export const QiskitCodePanel: React.FC = () => {
   };
 
   return (
-    <section id="code" className="quantum-card p-6 sm:p-8 space-y-6 bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-800">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
-        <div className="flex items-center space-x-2">
-          <Code2 className="w-5 h-5 text-quantum-theoretical" />
-          <div>
-            <h2 className="font-display font-bold text-xl text-ink-light dark:text-ink-dark">
-              Dynamic Qiskit 1.x Python Code Generator
-            </h2>
-            <p className="text-xs text-ink-mutedLight dark:text-ink-mutedDark font-mono mt-0.5">
-              Production-ready Python code matching active experiment parameters (n={config.numQubits}, targets=[{config.targetStates.map((s) => '|' + s + '⟩').join(', ')}], k={config.iterations}).
-            </p>
-          </div>
+    <div className="quantum-card p-5 space-y-4 max-w-4xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-zinc-800">
+        <div>
+          <h2 className="text-sm font-semibold text-white">Qiskit Python Export</h2>
+          <p className="text-[11px] text-zinc-500 font-mono mt-0.5">
+            n={config.numQubits}, targets=[{config.targetStates.map((s) => '|' + s + '⟩').join(', ')}], k={config.iterations}
+          </p>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-mono">
+        <div className="flex items-center gap-2 text-xs font-mono">
+          <div className="flex bg-zinc-900 p-0.5 rounded border border-zinc-800">
             <button
               onClick={() => setStyle('basic')}
-              className={`px-3 py-1.5 rounded-lg transition-colors ${
-                style === 'basic'
-                  ? 'bg-white dark:bg-surface-dark text-quantum-theoretical font-bold shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
+              className={`px-3 py-1 rounded transition-colors ${style === 'basic' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
             >
-              Explicit Gates
+              Explicit
             </button>
             <button
               onClick={() => setStyle('grover_operator')}
-              className={`px-3 py-1.5 rounded-lg transition-colors ${
-                style === 'grover_operator'
-                  ? 'bg-white dark:bg-surface-dark text-quantum-theoretical font-bold shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
+              className={`px-3 py-1 rounded transition-colors ${style === 'grover_operator' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
             >
-              GroverOperator
+              Operator
             </button>
           </div>
 
           <button
             onClick={handleCopy}
-            className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-quantum-theoretical text-white hover:bg-quantum-theoreticalLight font-mono text-xs font-semibold shadow-xs transition-all"
+            className="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
           >
-            {copied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-            <span>{copied ? 'Copied to Clipboard!' : 'Copy Code'}</span>
+            {copied ? 'Copied' : 'Copy'}
           </button>
         </div>
       </div>
 
-      <div className="relative">
-        <div className="flex items-center justify-between px-4 py-2.5 rounded-t-xl bg-slate-950 border-b border-slate-800 text-xs font-mono text-slate-400">
-          <div className="flex items-center space-x-2">
-            <Terminal className="w-4 h-4 text-amber-400" />
-            <span>grover_experiment.py</span>
-          </div>
-          <span className="text-[11px] text-slate-500">Python 3.10+ • Qiskit 1.x</span>
+      <div className="border border-zinc-800 rounded-lg overflow-hidden">
+        <div className="bg-[#18181b] px-3 py-1.5 border-b border-zinc-800 text-[10px] font-mono text-zinc-500 flex justify-between">
+          <span>grover_experiment.py</span>
+          <span>Qiskit 1.x</span>
         </div>
-
-        <pre className="quantum-code-block rounded-t-none font-mono text-xs leading-relaxed text-slate-200 max-h-[450px]">
+        <pre className="p-4 bg-[#09090b] text-zinc-300 text-[11px] font-mono overflow-x-auto leading-relaxed max-h-[600px]">
           <code>{code}</code>
         </pre>
       </div>
-    </section>
+    </div>
   );
 };

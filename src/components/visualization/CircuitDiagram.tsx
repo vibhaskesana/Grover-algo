@@ -1,206 +1,86 @@
 import React from 'react';
 import { useExperiment } from '../../context/ExperimentContext';
-import { Layers } from 'lucide-react';
 
 export const CircuitDiagram: React.FC = () => {
   const { config } = useExperiment();
   const { numQubits, iterations, targetStates } = config;
 
-  const wireHeight = 44;
-  const startX = 70;
-  const initHWidth = 40;
-  const loopWidth = 140;
-  const measureWidth = 50;
+  const wireH = 40;
+  const startX = 65;
+  const hWidth = 38;
+  const loopW = 130;
+  const measureW = 45;
 
-  const totalWidth = startX + initHWidth + (iterations > 0 ? iterations * loopWidth : loopWidth) + measureWidth + 60;
-  const totalHeight = numQubits * wireHeight + 40;
+  const totalW = startX + hWidth + (iterations > 0 ? iterations * loopW : loopW) + measureW + 50;
+  const totalH = numQubits * wireH + 35;
 
   return (
-    <div className="quantum-card p-6 space-y-4 bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-800 overflow-hidden">
-      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-        <div className="flex items-center space-x-2">
-          <Layers className="w-4 h-4 text-quantum-theoretical" />
-          <h3 className="font-display font-semibold text-base text-ink-light dark:text-ink-dark">
-            Dynamic Quantum Circuit Diagram
-          </h3>
-        </div>
-        <div className="flex items-center space-x-2 text-xs font-mono text-slate-500">
-          <span>{numQubits} Qubits</span>
-          <span>•</span>
-          <span>{iterations} Grover Iteration{iterations !== 1 ? 's' : ''}</span>
-        </div>
+    <div className="quantum-card p-5 space-y-3">
+      <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+        <h3 className="text-sm font-semibold text-zinc-200">Circuit Diagram</h3>
+        <span className="text-[10px] font-mono text-zinc-500">
+          {numQubits}q · {iterations} iter · targets: {targetStates.map((s) => '|' + s + '⟩').join(', ')}
+        </span>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-slate-500">
-        <div>
-          Target State(s):{' '}
-          <strong className="text-quantum-marked dark:text-quantum-markedLight">
-            {targetStates.map((s) => '|' + s + '⟩').join(', ')}
-          </strong>
-        </div>
-        <div className="flex items-center space-x-3">
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 bg-purple-500 rounded-sm inline-block" /> H (Hadamard)
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 bg-amber-500 rounded-sm inline-block" /> U_ω (Oracle)
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 bg-teal-500 rounded-sm inline-block" /> U_s (Diffuser)
-          </span>
-        </div>
-      </div>
-
-      <div className="overflow-x-auto py-2">
-        <svg
-          width={Math.max(600, totalWidth)}
-          height={totalHeight}
-          className="mx-auto font-mono text-xs select-none"
-        >
+      <div className="overflow-x-auto">
+        <svg width={Math.max(500, totalW)} height={totalH} className="font-mono text-xs select-none">
+          {/* Qubit wires */}
           {Array.from({ length: numQubits }).map((_, q) => {
-            const y = 30 + q * wireHeight;
+            const y = 28 + q * wireH;
             return (
-              <g key={`wire-${q}`}>
-                <text
-                  x={15}
-                  y={y + 4}
-                  className="fill-slate-700 dark:fill-slate-200 font-bold text-xs"
-                >
-                  q_{q}: |0⟩
-                </text>
-
-                <line
-                  x1={startX}
-                  y1={y}
-                  x2={totalWidth - 30}
-                  y2={y}
-                  className="stroke-slate-300 dark:stroke-slate-700 stroke-2"
-                />
+              <g key={`w-${q}`}>
+                <text x={10} y={y + 4} className="fill-zinc-400 font-bold" style={{ fontSize: 11 }}>q{q}</text>
+                <line x1={startX} y1={y} x2={totalW - 25} y2={y} stroke="#3f3f46" strokeWidth={1.5} />
               </g>
             );
           })}
 
+          {/* Hadamard gates */}
           {Array.from({ length: numQubits }).map((_, q) => {
-            const y = 30 + q * wireHeight;
-            const x = startX + 15;
+            const y = 28 + q * wireH;
+            const x = startX + 10;
             return (
-              <g key={`h-gate-${q}`}>
-                <rect
-                  x={x}
-                  y={y - 14}
-                  width={28}
-                  height={28}
-                  rx={6}
-                  className="fill-purple-600 dark:fill-purple-700 stroke-purple-400 stroke-1 shadow-xs"
-                />
-                <text
-                  x={x + 14}
-                  y={y + 4}
-                  textAnchor="middle"
-                  className="fill-white font-bold text-xs"
-                >
-                  H
-                </text>
+              <g key={`h-${q}`}>
+                <rect x={x} y={y - 12} width={24} height={24} rx={4} fill="#7c3aed" stroke="#8b5cf6" strokeWidth={0.5} />
+                <text x={x + 12} y={y + 4} textAnchor="middle" fill="white" style={{ fontSize: 11, fontWeight: 700 }}>H</text>
               </g>
             );
           })}
 
-          <line
-            x1={startX + initHWidth + 15}
-            y1={15}
-            x2={startX + initHWidth + 15}
-            y2={totalHeight - 15}
-            className="stroke-slate-300 dark:stroke-slate-700 stroke-1 stroke-dasharray-2"
-            strokeDasharray="4 4"
-          />
+          {/* Separator */}
+          <line x1={startX + hWidth + 10} y1={10} x2={startX + hWidth + 10} y2={totalH - 10} stroke="#27272a" strokeWidth={1} strokeDasharray="4 4" />
 
+          {/* Grover iterations */}
           {iterations > 0 ? (
-            Array.from({ length: iterations }).map((_, iterIdx) => {
-              const blockX = startX + initHWidth + 30 + iterIdx * loopWidth;
-              const boxHeight = numQubits * wireHeight - 10;
-              const topY = 15;
-
+            Array.from({ length: iterations }).map((_, i) => {
+              const bx = startX + hWidth + 25 + i * loopW;
+              const boxH = numQubits * wireH - 8;
               return (
-                <g key={`iter-block-${iterIdx}`}>
-                  <rect
-                    x={blockX}
-                    y={topY}
-                    width={48}
-                    height={boxHeight}
-                    rx={8}
-                    className="fill-amber-500/20 dark:fill-amber-500/30 stroke-amber-500 stroke-2"
-                  />
-                  <text
-                    x={blockX + 24}
-                    y={topY + boxHeight / 2 + 4}
-                    textAnchor="middle"
-                    className="fill-amber-600 dark:fill-amber-300 font-bold text-xs"
-                  >
-                    U_ω
-                  </text>
+                <g key={`it-${i}`}>
+                  <rect x={bx} y={14} width={42} height={boxH} rx={6} fill="rgba(245,158,11,0.12)" stroke="#f59e0b" strokeWidth={1.5} />
+                  <text x={bx + 21} y={14 + boxH / 2 + 4} textAnchor="middle" fill="#fbbf24" style={{ fontSize: 11, fontWeight: 700 }}>Uω</text>
 
-                  <rect
-                    x={blockX + 60}
-                    y={topY}
-                    width={48}
-                    height={boxHeight}
-                    rx={8}
-                    className="fill-teal-500/20 dark:fill-teal-500/30 stroke-teal-500 stroke-2"
-                  />
-                  <text
-                    x={blockX + 84}
-                    y={topY + boxHeight / 2 + 4}
-                    textAnchor="middle"
-                    className="fill-teal-600 dark:fill-teal-300 font-bold text-xs"
-                  >
-                    U_s
-                  </text>
+                  <rect x={bx + 52} y={14} width={42} height={boxH} rx={6} fill="rgba(13,148,136,0.12)" stroke="#0d9488" strokeWidth={1.5} />
+                  <text x={bx + 73} y={14 + boxH / 2 + 4} textAnchor="middle" fill="#2dd4bf" style={{ fontSize: 11, fontWeight: 700 }}>Us</text>
 
-                  <text
-                    x={blockX + 54}
-                    y={totalHeight - 5}
-                    textAnchor="middle"
-                    className="fill-slate-400 font-mono text-[10px]"
-                  >
-                    Iter #{iterIdx + 1}
-                  </text>
+                  <text x={bx + 47} y={totalH - 3} textAnchor="middle" fill="#52525b" style={{ fontSize: 9 }}>iter {i + 1}</text>
                 </g>
               );
             })
           ) : (
-            <text
-              x={startX + initHWidth + 80}
-              y={totalHeight / 2}
-              className="fill-slate-400 font-mono text-xs"
-            >
-              (k = 0: No Grover iterations applied)
-            </text>
+            <text x={startX + hWidth + 70} y={totalH / 2} fill="#52525b" style={{ fontSize: 11 }}>(k=0: no iterations)</text>
           )}
 
+          {/* Measurement */}
           {Array.from({ length: numQubits }).map((_, q) => {
-            const y = 30 + q * wireHeight;
-            const measureX = totalWidth - 45;
+            const y = 28 + q * wireH;
+            const mx = totalW - 40;
             return (
-              <g key={`measure-${q}`}>
-                <rect
-                  x={measureX}
-                  y={y - 14}
-                  width={28}
-                  height={28}
-                  rx={6}
-                  className="fill-slate-800 dark:fill-slate-900 stroke-slate-600 stroke-1"
-                />
-                <path
-                  d={`M ${measureX + 6} ${y + 6} A 8 8 0 0 1 ${measureX + 22} ${y + 6}`}
-                  className="stroke-slate-300 fill-none stroke-1.5"
-                />
-                <line
-                  x1={measureX + 14}
-                  y1={y + 6}
-                  x2={measureX + 20}
-                  y2={y - 4}
-                  className="stroke-amber-400 stroke-1.5"
-                />
+              <g key={`m-${q}`}>
+                <rect x={mx} y={y - 12} width={24} height={24} rx={4} fill="#18181b" stroke="#3f3f46" strokeWidth={1} />
+                <path d={`M ${mx + 5} ${y + 5} A 7 7 0 0 1 ${mx + 19} ${y + 5}`} stroke="#71717a" fill="none" strokeWidth={1} />
+                <line x1={mx + 12} y1={y + 5} x2={mx + 17} y2={y - 3} stroke="#f59e0b" strokeWidth={1.5} />
               </g>
             );
           })}

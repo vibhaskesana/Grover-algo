@@ -1,93 +1,43 @@
 import React from 'react';
 import { useExperiment } from '../../context/ExperimentContext';
-import { Calculator, Award } from 'lucide-react';
-import { MathView } from '../common/MathView';
 
 export const TheoreticalCard: React.FC = () => {
   const { result, config } = useExperiment();
-
   if (!result) return null;
 
+  const metrics = [
+    { label: 'Search Space', value: `N = ${result.totalStates}`, sub: `2^${config.numQubits}` },
+    { label: 'Marked States', value: `M = ${result.markedCount}`, sub: `${(result.markedRatio * 100).toFixed(1)}%`, accent: true },
+    { label: 'Rotation θ', value: `${result.theta.toFixed(3)} rad`, sub: `${result.thetaDegrees}°` },
+    { label: 'Optimal k', value: `k = ${result.optimalIterations}`, sub: `P = ${(result.theoreticalMaxProb * 100).toFixed(1)}%`, highlight: true },
+  ];
+
   return (
-    <div className="quantum-card p-6 space-y-4 bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-800">
-      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-        <div className="flex items-center space-x-2">
-          <Calculator className="w-4 h-4 text-quantum-theoretical" />
-          <h3 className="font-display font-semibold text-base text-ink-light dark:text-ink-dark flex items-center gap-1.5">
-            Theoretical Baseline <MathView math="\mathcal{O}(\sqrt{N})" />
-          </h3>
-        </div>
-        <span className="text-xs font-mono px-2 py-0.5 rounded bg-quantum-theoretical/10 text-quantum-theoretical dark:text-quantum-theoreticalLight font-semibold">
-          Analytical Solution
+    <div className="quantum-card p-5 space-y-4">
+      <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+        <h3 className="text-sm font-semibold text-zinc-200">Theoretical Baseline</h3>
+        <span className="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
+          Analytical
         </span>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
-        <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800">
-          <span className="text-[11px] font-mono text-slate-400 block flex items-center gap-1">
-            SEARCH SPACE <MathView math="N = 2^n" />
-          </span>
-          <span className="font-mono text-xl font-extrabold text-ink-light dark:text-ink-dark">
-            {result.totalStates}
-          </span>
-          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-            <MathView math={`2^{${config.numQubits}}`} /> basis states
-          </span>
-        </div>
-
-        <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800">
-          <span className="text-[11px] font-mono text-slate-400 block flex items-center gap-1">
-            MARKED STATES <MathView math="M" />
-          </span>
-          <span className="font-mono text-xl font-extrabold text-quantum-marked dark:text-quantum-markedLight">
-            {result.markedCount}
-          </span>
-          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-            <MathView math={`M/N = ${(result.markedRatio * 100).toFixed(1)}\\%`} />
-          </span>
-        </div>
-
-        <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800">
-          <span className="text-[11px] font-mono text-slate-400 block flex items-center gap-1">
-            ROTATION ANGLE <MathView math="\theta" />
-          </span>
-          <span className="font-mono text-xl font-extrabold text-quantum-theoretical dark:text-quantum-theoreticalLight">
-            {result.theta.toFixed(3)}
-          </span>
-          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-            <MathView math={`\\theta \\approx ${result.thetaDegrees}^\\circ`} />
-          </span>
-        </div>
-
-        <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800">
-          <span className="text-[11px] font-mono text-slate-400 block flex items-center gap-1">
-            OPTIMAL <MathView math="k_{\text{opt}}" />
-          </span>
-          <span className="font-mono text-xl font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-            k = {result.optimalIterations}
-            <Award className="w-4 h-4" />
-          </span>
-          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-            Max <MathView math={`P = ${(result.theoreticalMaxProb * 100).toFixed(1)}\\%`} />
-          </span>
-        </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {metrics.map((m) => (
+          <div key={m.label} className="bg-zinc-900/80 rounded-lg p-3 border border-zinc-800/60">
+            <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider block">{m.label}</span>
+            <span className={`font-mono text-lg font-bold block mt-1 ${
+              m.highlight ? 'text-emerald-400' : m.accent ? 'text-amber-400' : 'text-white'
+            }`}>
+              {m.value}
+            </span>
+            <span className="text-[10px] font-mono text-zinc-500 block">{m.sub}</span>
+          </div>
+        ))}
       </div>
 
-      <div className="p-4 rounded-xl bg-slate-900 text-slate-100 font-mono text-xs space-y-2.5 border border-slate-800">
-        <div className="flex justify-between items-center text-slate-400 text-[11px] border-b border-slate-800 pb-1.5">
-          <span>Mathematical Formulation</span>
-          <span>Lov Grover (1996)</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-300 items-center">
-          <div className="flex items-center gap-1">
-            <span>Optimal Iterations:</span>
-            <MathView math={`k_{\\text{opt}} \\approx \\left\\lfloor \\frac{\\pi}{4} \\sqrt{\\frac{N}{M}} \\right\\rfloor = ${result.optimalIterations}`} className="text-emerald-400 font-bold" />
-          </div>
-          <div className="flex items-center gap-1">
-            <span>Probability Curve:</span>
-            <MathView math={`P(k) = \\sin^2\\left(\\frac{(2k+1)\\theta}{2}\\right) = ${(result.theoreticalProb * 100).toFixed(1)}\\%`} className="text-quantum-theoreticalLight font-bold" />
-          </div>
-        </div>
+      <div className="bg-zinc-900/80 rounded-lg p-3 border border-zinc-800/60 font-mono text-xs text-zinc-400 flex flex-wrap gap-x-8 gap-y-1">
+        <span>k_opt ≈ ⌊(π/4)√(N/M)⌋ = <strong className="text-emerald-400">{result.optimalIterations}</strong></span>
+        <span>P(k) = sin²((2k+1)θ/2) = <strong className="text-indigo-400">{(result.theoreticalProb * 100).toFixed(1)}%</strong></span>
       </div>
     </div>
   );

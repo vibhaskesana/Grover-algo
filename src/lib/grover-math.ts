@@ -324,7 +324,7 @@ export function runGroverSimulation(config: GroverExperimentConfig): GroverExper
 /**
  * Generate standard benchmark metrics table comparing 2, 3, and 4 qubits with different marked state counts.
  */
-export function generateBenchmarkSuite(): BenchmarkRow[] {
+export function generateBenchmarkSuite(shots: number = 10000, noiseLevel: number = 0): BenchmarkRow[] {
   const configs = [
     { numQubits: 2, markedCount: 1, targets: ['11'] },
     { numQubits: 2, markedCount: 2, targets: ['01', '10'] },
@@ -356,6 +356,10 @@ export function generateBenchmarkSuite(): BenchmarkRow[] {
     const noiseNorm = Math.min(1.0, (1 - maxProb) / 0.5);
     const sdsScore = Math.round((0.35 * nNorm + 0.35 * nmNorm + 0.30 * noiseNorm) * 100) / 100;
 
+    // Run simulation to get empirical result using current context shots/noise
+    const { finalAmplitudes } = simulateStateEvolution(cfg.numQubits as 2|3|4, cfg.targets, optimalK);
+    const { empiricalSuccessRate } = simulateShotMeasurements(finalAmplitudes, shots, noiseLevel);
+
     return {
       id: `${cfg.numQubits}q-m${cfg.markedCount}`,
       numQubits: cfg.numQubits,
@@ -365,6 +369,7 @@ export function generateBenchmarkSuite(): BenchmarkRow[] {
       thetaRad: Math.round(thetaRad * 10000) / 10000,
       optimalIterations: optimalK,
       theoreticalMaxProb: Math.round(maxProb * 10000) / 10000,
+      empiricalMaxProb: empiricalSuccessRate,
       classicalAvgQueries: Math.round(classicalQueries * 100) / 100,
       speedupFactor: speedup,
       sdsScore: Math.max(0.12, sdsScore),
