@@ -10,6 +10,16 @@ import type {
   BenchmarkRow
 } from './types';
 
+// Deterministic PRNG for reproducible simulations
+export function mulberry32(a: number) {
+  return function() {
+    var t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+
 /**
  * Generate all 2^n binary strings of length n in order.
  */
@@ -188,7 +198,8 @@ export function simulateStateEvolution(
 export function simulateShotMeasurements(
   finalAmplitudes: StateAmplitude[],
   shots: number,
-  noiseLevel: number = 0
+  noiseLevel: number = 0,
+  rng: () => number = Math.random
 ): { distribution: SimulatedShot[]; empiricalSuccessRate: number; topMeasuredState: string; fidelityScore: number } {
   const totalStates = finalAmplitudes.length;
 
@@ -215,7 +226,7 @@ export function simulateShotMeasurements(
   // Draw Monte Carlo shots
   const counts = new Array<number>(totalStates).fill(0);
   for (let s = 0; s < shots; s++) {
-    const rand = Math.random();
+    const rand = rng();
     let idx = 0;
     while (idx < totalStates - 1 && rand > cdf[idx]) {
       idx++;
