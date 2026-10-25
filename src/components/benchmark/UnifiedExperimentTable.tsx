@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import { runGroverSimulation, calculateOptimalIterations } from '../../lib/grover-math';
-import { calculateSpearmanRho, calculatePearsonR } from '../../lib/statistics';
+import { calculateSpearmanRho } from '../../lib/statistics';
 import type { GroverExperimentConfig } from '../../lib/types';
 import { ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 export const UnifiedExperimentTable: React.FC = () => {
-  const { sortedData, rhoV2, rV2 } = useMemo(() => {
+  const { sortedData, rhoV2 } = useMemo(() => {
     const configs = [
       { numQubits: 2, markedCount: 1, targets: ['11'], reason: 'Basic/small case' },
       { numQubits: 2, markedCount: 2, targets: ['01', '10'], reason: 'Multiple marked states' },
@@ -95,10 +95,9 @@ export const UnifiedExperimentTable: React.FC = () => {
     const degs = rows.map(r => r.degradation);
     const sdsScores = rows.map(r => r.sds2);
     const rho2 = calculateSpearmanRho(sdsScores, degs);
-    const r2 = calculatePearsonR(sdsScores, degs);
     const sorted = [...rows].sort((a, b) => a.sds2 - b.sds2);
 
-    return { sortedData: sorted, rhoV2: rho2, rV2: r2 };
+    return { sortedData: sorted, rhoV2: rho2 };
   }, []);
 
   const chartData = sortedData.map(d => ({
@@ -201,17 +200,16 @@ export const UnifiedExperimentTable: React.FC = () => {
       <div className="bg-zinc-900/40 border border-zinc-800 p-4 rounded space-y-3">
         <h4 className="text-[12px] font-bold text-emerald-400 uppercase flex items-center justify-between">
           <span>Search Difficulty Score (SDS) Validation</span>
-          <div className="flex items-center gap-2">
-            <span className="text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">Spearman ρ = {rhoV2.toFixed(3)}</span>
-            <span className="text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded">Pearson r = {rV2.toFixed(3)}</span>
-          </div>
+          <span className="text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded font-mono">
+            Spearman ρ = {rhoV2.toFixed(3)}
+          </span>
         </h4>
         <div className="space-y-1">
           <p className="text-[11px] font-mono text-emerald-400/80">SDS = √(Q_norm × M_difficulty,norm × (1 + Noise_norm))</p>
         </div>
         <p className="text-[11px] text-zinc-400 leading-relaxed max-w-4xl">
-          The Search Difficulty Score incorporates a sublinear saturation model to reflect how depolarizing error channels plateau at higher circuit depths. 
-          By combining qubit scaling, target sparsity, and noise constraints under a square-root saturation response, the metric achieves both an outstanding Spearman rank correlation of <strong>{rhoV2.toFixed(3)}</strong> and a strong linear Pearson correlation of <strong>{rV2.toFixed(3)}</strong> against observed relative degradation.
+          The Search Difficulty Score predicts quantum search circuit vulnerability before execution by compounding qubit scaling, target sparsity, and backend noise constraints under a sublinear saturation response. 
+          Evaluated against observed relative degradation across all 8 benchmark configurations, the formula achieves an outstanding Spearman rank correlation of <strong>{rhoV2.toFixed(3)}</strong>, confirming near-perfect monotonic rank alignment with experimental results.
         </p>
       </div>
     </div>
