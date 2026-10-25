@@ -47,3 +47,26 @@ export function calculateSpearmanRho(x: number[], y: number[]): number {
   if (sumSqX === 0 || sumSqY === 0) return 0;
   return numerator / Math.sqrt(sumSqX * sumSqY);
 }
+
+export function calculatePearsonR(x: number[], y: number[]): number {
+  if (x.length !== y.length || x.length === 0) return 0;
+  const n = x.length;
+  const meanX = x.reduce((a, b) => a + b, 0) / n;
+  const meanY = y.reduce((a, b) => a + b, 0) / n;
+
+  let numerator = 0;
+  let sumSqX = 0;
+  let sumSqY = 0;
+
+  for (let i = 0; i < n; i++) {
+    const dx = x[i] - meanX;
+    const dy = y[i] - meanY;
+    numerator += dx * dy;
+    sumSqX += dx * dx;
+    sumSqY += dy * dy;
+  }
+
+  if (sumSqX === 0 || sumSqY === 0) return 0;
+  return numerator / Math.sqrt(sumSqX * sumSqY);
+}
+
