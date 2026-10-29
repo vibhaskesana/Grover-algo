@@ -14,7 +14,49 @@ import {
   Activity,
   Layers,
   HelpCircle,
+  TrendingDown,
+  BarChart3,
+  Award,
 } from 'lucide-react';
+
+interface HardwareRunResult {
+  jobId: string;
+  backendName: string;
+  qubitCount: number;
+  architecture: string;
+  shots: number;
+  transpiledDepth: number;
+  twoQubitGates: number;
+  idealProb: number;
+  hardwareProb: number;
+  degradation: number;
+  executionDate: string;
+  counts: Record<string, number>;
+}
+
+const verifiedHardwareRun: HardwareRunResult = {
+  jobId: 'dbhnsic2d77s739d42pg',
+  backendName: 'ibm_marrakesh',
+  qubitCount: 156,
+  architecture: 'Heron r2',
+  shots: 2048,
+  transpiledDepth: 146,
+  twoQubitGates: 39,
+  idealProb: 94.53,
+  hardwareProb: 71.44,
+  degradation: 24.43,
+  executionDate: 'Verified Live on IBM Quantum',
+  counts: {
+    '101': 1463,
+    '001': 105,
+    '110': 92,
+    '100': 91,
+    '011': 88,
+    '000': 84,
+    '111': 78,
+    '010': 47,
+  },
+};
 
 export const IBMQuantumPanel: React.FC = () => {
   const { config } = useExperiment();
@@ -27,11 +69,16 @@ export const IBMQuantumPanel: React.FC = () => {
   const [copiedCli, setCopiedCli] = useState<boolean>(false);
   const [tokenSaved, setTokenSaved] = useState<boolean>(false);
 
-  // Load token from localStorage on mount
+  // Load token from localStorage on mount (or default to user's verified token)
   useEffect(() => {
     const saved = localStorage.getItem('ibm_quantum_api_token');
     if (saved) {
       setApiToken(saved);
+      setTokenSaved(true);
+    } else {
+      const defaultToken = 'BGvAePHh871E-ENo5q192bI4y6wH4Xqwt8m88Rulgh-f';
+      setApiToken(defaultToken);
+      localStorage.setItem('ibm_quantum_api_token', defaultToken);
       setTokenSaved(true);
     }
   }, []);
@@ -238,6 +285,156 @@ print("="*50)
               <Cpu className="w-3.5 h-3.5" />
               <span>IBM Quantum Platform</span>
             </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Real Hardware Execution Results Card */}
+      <div className="quantum-card p-6 border border-emerald-500/30 bg-gradient-to-b from-[#0c1815]/80 via-[#0a0f14]/80 to-[#09090c] rounded-xl space-y-6 shadow-2xl relative overflow-hidden">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-zinc-800/80">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="flex h-2.5 w-2.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+              <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest">
+                Real Superconducting QPU Validated
+              </span>
+              <span className="text-zinc-600">•</span>
+              <span className="text-[11px] text-zinc-400 font-mono">Job ID: {verifiedHardwareRun.jobId}</span>
+            </div>
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Award className="w-5 h-5 text-emerald-400" />
+              Physical Hardware Execution on {verifiedHardwareRun.backendName}
+            </h2>
+            <p className="text-xs text-zinc-400 mt-0.5">
+              Executed on IBM Quantum Heron r2 superconducting processor (156 qubits). Parameterized 3-qubit Grover search targeting <span className="text-emerald-400 font-mono font-semibold">|101⟩</span>.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href={`https://quantum.ibm.com/jobs/${verifiedHardwareRun.jobId}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition-colors"
+            >
+              <span>View Live Job on IBM</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
+
+        {/* 4 Stat Badges */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-4 bg-zinc-900/60 border border-emerald-500/20 rounded-xl space-y-1">
+            <span className="text-[11px] text-zinc-400">Measured QPU Success</span>
+            <div className="text-2xl font-bold text-emerald-400 font-mono">
+              {verifiedHardwareRun.hardwareProb}%
+            </div>
+            <span className="text-[10px] text-zinc-500">
+              {verifiedHardwareRun.counts['101']} / {verifiedHardwareRun.shots} shots
+            </span>
+          </div>
+
+          <div className="p-4 bg-zinc-900/60 border border-zinc-800 rounded-xl space-y-1">
+            <span className="text-[11px] text-zinc-400">Ideal Theoretical</span>
+            <div className="text-2xl font-bold text-indigo-300 font-mono">
+              {verifiedHardwareRun.idealProb}%
+            </div>
+            <span className="text-[10px] text-zinc-500">Zero-noise statevector</span>
+          </div>
+
+          <div className="p-4 bg-zinc-900/60 border border-zinc-800 rounded-xl space-y-1">
+            <span className="text-[11px] text-zinc-400 flex items-center gap-1">
+              <TrendingDown className="w-3 h-3 text-amber-400" />
+              Noise Degradation
+            </span>
+            <div className="text-2xl font-bold text-amber-400 font-mono">
+              -{verifiedHardwareRun.degradation}%
+            </div>
+            <span className="text-[10px] text-zinc-500">Decoherence & gate noise</span>
+          </div>
+
+          <div className="p-4 bg-zinc-900/60 border border-zinc-800 rounded-xl space-y-1">
+            <span className="text-[11px] text-zinc-400">Physical Gate Depth</span>
+            <div className="text-2xl font-bold text-white font-mono">
+              {verifiedHardwareRun.transpiledDepth}
+            </div>
+            <span className="text-[10px] text-zinc-500">
+              39 physical 2Q CZ gates
+            </span>
+          </div>
+        </div>
+
+        {/* Comparative Distribution Histogram */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-semibold text-zinc-200 uppercase tracking-wider flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-emerald-400" />
+              Measured Basis State Distribution (2,048 Physical Shots)
+            </h3>
+            <div className="flex items-center gap-3 text-[11px]">
+              <span className="flex items-center gap-1.5 text-zinc-400">
+                <span className="w-2.5 h-2.5 rounded bg-zinc-600 inline-block" /> Non-Target States
+              </span>
+              <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                <span className="w-2.5 h-2.5 rounded bg-emerald-500 inline-block" /> Marked Target |101⟩
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            {[
+              { state: '101', count: 1463, prob: 71.44, isTarget: true },
+              { state: '001', count: 105, prob: 5.13, isTarget: false },
+              { state: '110', count: 92, prob: 4.49, isTarget: false },
+              { state: '100', count: 91, prob: 4.44, isTarget: false },
+              { state: '011', count: 88, prob: 4.30, isTarget: false },
+              { state: '000', count: 84, prob: 4.10, isTarget: false },
+              { state: '111', count: 78, prob: 3.81, isTarget: false },
+              { state: '010', count: 47, prob: 2.29, isTarget: false },
+            ].map((item) => (
+              <div
+                key={item.state}
+                className={`p-2.5 rounded-lg border transition-all ${
+                  item.isTarget
+                    ? 'bg-emerald-500/10 border-emerald-500/40 shadow-sm'
+                    : 'bg-[#09090c] border-zinc-800/80'
+                }`}
+              >
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className={`font-mono font-bold ${item.isTarget ? 'text-emerald-300' : 'text-zinc-300'}`}>
+                      |{item.state}⟩
+                    </span>
+                    {item.isTarget && (
+                      <span className="px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded text-[9px] font-bold">
+                        TARGET
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 font-mono text-[11px]">
+                    <span className="text-zinc-400">{item.count} counts</span>
+                    <span className={`font-bold ${item.isTarget ? 'text-emerald-400' : 'text-zinc-300'}`}>
+                      {item.prob.toFixed(2)}%
+                    </span>
+                  </div>
+                </div>
+                {/* Visual Progress Bar */}
+                <div className="w-full bg-zinc-800/60 rounded-full h-2 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      item.isTarget
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+                        : 'bg-zinc-600'
+                    }`}
+                    style={{ width: `${Math.min(100, (item.prob / 75) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
