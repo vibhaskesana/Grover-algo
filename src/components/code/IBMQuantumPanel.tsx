@@ -130,7 +130,15 @@ qc.measure(range(n_qubits), range(n_qubits))
 
 # 3. Authenticate to IBM Quantum Runtime Service
 print("Authenticating to IBM Quantum Runtime...")
-service = QiskitRuntimeService(channel="ibm_quantum", token=API_TOKEN)
+service = None
+for channel in ["ibm_quantum_platform", "ibm_cloud"]:
+    try:
+        service = QiskitRuntimeService(channel=channel, token=API_TOKEN)
+        break
+    except Exception:
+        continue
+if service is None:
+    raise ValueError("Authentication failed. Please verify your token and ensure a free Qiskit Runtime instance is created at cloud.ibm.com/catalog/services/qiskit-runtime")
 
 # 4. Select Backend
 ${
@@ -282,6 +290,24 @@ print("="*50)
                 {showToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
             </div>
+          </div>
+
+          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs space-y-1">
+            <p className="font-semibold text-amber-300 flex items-center gap-1.5">
+              <span>💡</span> If using an IBM Cloud API Key:
+            </p>
+            <p className="text-zinc-300 text-[11px] leading-relaxed">
+              Ensure you have created the free <span className="font-semibold text-white">Qiskit Runtime (Lite Plan)</span> service instance on your account:{' '}
+              <a
+                href="https://cloud.ibm.com/catalog/services/qiskit-runtime"
+                target="_blank"
+                rel="noreferrer"
+                className="text-amber-400 underline font-medium hover:text-amber-300 inline-flex items-center gap-0.5"
+              >
+                cloud.ibm.com/catalog/services/qiskit-runtime <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+              . Select <span className="text-white font-mono">Lite</span> and click <span className="text-white font-semibold">Create</span> (100% free with 10 min/month QPU execution).
+            </p>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 text-xs">

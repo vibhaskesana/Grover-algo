@@ -213,6 +213,19 @@ def main():
         help="IBM Quantum backend name (e.g. ibm_fez, ibm_kyoto, ibm_brisbane). Default: least busy QPU"
     )
     parser.add_argument(
+        "--channel",
+        type=str,
+        choices=["ibm_quantum_platform", "ibm_cloud"],
+        default=None,
+        help="Channel type: 'ibm_quantum_platform' or 'ibm_cloud' (default: auto-detect)"
+    )
+    parser.add_argument(
+        "--instance",
+        type=str,
+        default=None,
+        help="IBM Cloud service instance CRN (optional if account has default instance)"
+    )
+    parser.add_argument(
         "--optimization",
         type=int,
         choices=[0, 1, 2, 3],
@@ -260,12 +273,39 @@ def main():
 
     # 3. Authenticate to IBM Quantum
     print(f"\n[2/5] Authenticating to IBM Quantum Runtime Service...")
-    try:
-        service = QiskitRuntimeService(channel="ibm_quantum", token=token)
-        print("      [OK] Successfully authenticated!")
-    except Exception as e:
-        print(f"\n[ERROR] Authentication failed: {e}")
-        print("Please verify your API token at https://quantum.ibm.com/account")
+    channels_to_try = [args.channel] if args.channel else ["ibm_quantum_platform", "ibm_cloud"]
+    service = None
+    last_error = None
+
+    for ch in channels_to_try:
+        try:
+            kwargs = {"channel": ch, "token": token}
+            if args.instance:
+                kwargs["instance"] = args.instance
+            service = QiskitRuntimeService(**kwargs)
+            print(f"      [OK] Successfully authenticated via channel '{ch}'!")
+            break
+        except Exception as e:
+            last_error = e
+
+    if service is None:
+        err_msg = str(last_error)
+        print(f"\n[ERROR] Authentication failed: {last_error}")
+        
+        if "No matching instances found" in err_msg or "instances" in err_msg.lower():
+            print("\n" + "=" * 70)
+            print("  ACTION REQUIRED: ACTIVATE FREE QISKIT RUNTIME INSTANCE")
+            print("=" * 70)
+            print("Your IBM token was verified, but your account has 0 active Qiskit Runtime instances.")
+            print("To enable access to physical IBM quantum computers (100% free):")
+            print("  1. Open your browser to:")
+            print("     https://cloud.ibm.com/catalog/services/qiskit-runtime")
+            print("  2. Select the 'Lite' plan (Free tier with 10 min QPU time/month).")
+            print("  3. Click the blue 'Create' button in the bottom right corner.")
+            print("  4. Once created, re-run this command and it will connect immediately!")
+            print("=" * 70 + "\n")
+        else:
+            print("Please verify your API key at https://cloud.ibm.com/iam/apikeys or https://quantum.ibm.com/account")
         sys.exit(1)
 
     # 4. Backend Selection

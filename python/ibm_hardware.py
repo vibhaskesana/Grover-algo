@@ -40,7 +40,16 @@ def run_on_ibm_hardware(
         from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler
         
         # Initialize IBM Quantum Runtime Service
-        service = QiskitRuntimeService(channel="ibm_quantum", token=token)
+        # Initialize IBM Quantum Runtime Service
+        service = None
+        for ch in ["ibm_quantum_platform", "ibm_cloud"]:
+            try:
+                service = QiskitRuntimeService(channel=ch, token=token)
+                break
+            except Exception:
+                continue
+        if service is None:
+            raise ValueError("Failed to authenticate with IBM Quantum. Please check your token or ensure a free Qiskit Runtime instance is provisioned at https://cloud.ibm.com/catalog/services/qiskit-runtime")
         
         # Select target hardware backend
         if backend_name:
