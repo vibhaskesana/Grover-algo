@@ -6,7 +6,7 @@ import type {
 } from '../lib/types';
 import { runGroverSimulation, calculateOptimalIterations } from '../lib/grover-math';
 
-type TabId = 'simulator' | 'benchmarks' | 'export';
+export type TabId = 'simulator' | 'benchmarks' | 'export' | 'ibm';
 
 interface ExperimentContextType {
   config: GroverExperimentConfig;

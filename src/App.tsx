@@ -13,13 +13,14 @@ import { QubitScalingCards } from './components/benchmark/QubitScalingCards';
 import { KeyFindings } from './components/benchmark/KeyFindings';
 import { UnifiedExperimentTable } from './components/benchmark/UnifiedExperimentTable';
 import { QiskitCodePanel } from './components/code/QiskitCodePanel';
-
-type TabId = 'simulator' | 'benchmarks' | 'export';
+import { IBMQuantumPanel } from './components/code/IBMQuantumPanel';
+import type { TabId } from './context/ExperimentContext';
 
 const tabs: { id: TabId; label: string }[] = [
   { id: 'simulator', label: 'Simulator' },
   { id: 'benchmarks', label: 'Benchmarks' },
   { id: 'export', label: 'Qiskit Export' },
+  { id: 'ibm', label: 'IBM Quantum QPU' },
 ];
 
 const TabBar: React.FC = () => {
@@ -76,6 +77,10 @@ const ExportView: React.FC = () => (
   <QiskitCodePanel />
 );
 
+const IBMQuantumView: React.FC = () => (
+  <IBMQuantumPanel />
+);
+
 const Workspace: React.FC = () => {
   const { activeTab } = useExperiment();
   return (
@@ -84,6 +89,7 @@ const Workspace: React.FC = () => {
       {activeTab === 'simulator' && <SimulatorView />}
       {activeTab === 'benchmarks' && <BenchmarksView />}
       {activeTab === 'export' && <ExportView />}
+      {activeTab === 'ibm' && <IBMQuantumView />}
     </>
   );
 };
