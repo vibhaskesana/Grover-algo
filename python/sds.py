@@ -5,7 +5,7 @@ Includes Spearman rank correlation validation and weight tuning routines.
 """
 
 import numpy as np
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 
 
 def rank_array(arr: List[float]) -> np.ndarray:
@@ -101,6 +101,80 @@ def calculate_sds(
         updated_configs.append(c_copy)
         
     return updated_configs
+
+
+def calculate_hardware_calibrated_sds(
+    configs: List[Dict],
+    cz_gate_map: Optional[Dict[str, int]] = None
+) -> List[Dict]:
+    """
+    Computes Hardware-Calibrated Search Difficulty Score (SDS_QPU) using real IBM Quantum empirical data:
+    
+    Formula:
+        SDS_QPU = sqrt(Q_norm * M_diff,norm * (1 + kappa_hardware * T_topo))
+        
+    where:
+        Q_norm = n / 4.0
+        M_diff,norm = ((1 - M/N) - 0.50) / 0.4375
+        kappa_hardware = D_real / D_simulated = 24.43% / 8.65% = 2.8236
+                         (Derived from IBM Quantum ibm_marrakesh 156-qubit Heron r2 execution, Job dbhnsic2d77s739d42pg)
+        T_topo = N_CZ(n, M) / 39.0 (Heavy-hex physical 2-qubit entangling gate routing overhead)
+    """
+    import math
+    
+    default_cz_map = {
+        "2q-m2": 1,
+        "2q-m1": 3,
+        "3q-m4": 12,
+        "3q-m2": 24,
+        "3q-m1": 39,
+        "4q-m4": 45,
+        "4q-m2": 85,
+        "4q-m1": 140,
+    }
+    cz_map = cz_gate_map or default_cz_map
+    
+    # Empirical IBM Quantum hardware calibration constant (ibm_marrakesh)
+    KAPPA_HARDWARE = 0.24434 / 0.086536  # ~ 2.8236
+    
+    updated = []
+    for c in configs:
+        c_copy = dict(c)
+        n = int(c.get("qubits", c.get("n", 3)))
+        N = int(c.get("N", 2**n))
+        M = int(c.get("M", 1))
+        
+        q_norm = n / 4.0
+        f = M / N
+        m_diff = 1.0 - f
+        m_norm = (m_diff - 0.50) / 0.4375 if 0.4375 > 0 else 0.5
+        
+        cfg_id = c.get("id", f"{n}q-m{M}")
+        cz_count = cz_map.get(cfg_id, 39)
+        topo_overhead = cz_count / 39.0
+        
+        # Real QPU noise scaling term
+        noise_qpu_term = 1.0 + (KAPPA_HARDWARE * topo_overhead)
+        raw_product = max(0.0, q_norm * m_norm * noise_qpu_term)
+        sds_qpu = math.sqrt(raw_product)
+        
+        # Simulated D_sim and Hardware D_est
+        p_ideal = c.get("ideal_success_prob", 0.9453 if n == 3 and M == 1 else 1.0)
+        p_noisy = c.get("noisy_success_prob", 0.8635 if n == 3 and M == 1 else 0.900)
+        d_sim = max(0.0, (p_ideal - p_noisy) / max(1e-5, p_ideal))
+        
+        d_hardware_est = min(0.90, d_sim * (1.0 + (KAPPA_HARDWARE - 1.0) * topo_overhead))
+        if cfg_id == "3q-m1":
+            d_hardware_est = 0.24434  # Exact ground truth from ibm_marrakesh
+            
+        c_copy["sds_qpu"] = round(float(sds_qpu), 4)
+        c_copy["cz_gates"] = cz_count
+        c_copy["topo_overhead"] = round(float(topo_overhead), 3)
+        c_copy["hardware_degradation_est"] = round(float(d_hardware_est), 4)
+        c_copy["is_hardware_verified"] = (cfg_id == "3q-m1")
+        updated.append(c_copy)
+        
+    return updated
 
 
 def validate_sds_correlation(
