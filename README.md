@@ -1,5 +1,9 @@
 # ⚛️ GroverLab — Quantum Search Algorithm Laboratory & Benchmarking Suite
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/vibhaskesana/Grover-algo/blob/main/GroverLab_Colab_Visualizations.ipynb)
+[![IBM Quantum Validated](https://img.shields.io/badge/IBM%20Quantum-Heron%20r2%20Validated-6366f1.svg)](https://quantum.ibm.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](LICENSE)
+
 > **GroverLab** is a comprehensive quantum computing project that combines a **real-time interactive React web application** with a **standalone Python Qiskit laboratory**. It implements, simulates, and benchmarks **Grover's Quantum Search Algorithm** across 2, 3, and 4-qubit quantum systems.
 
 ---
@@ -98,7 +102,29 @@ Running on real IBM Quantum QPUs requires an **IBM Quantum API Token** (free to 
 | **CSV Export & Plot Generation** | ✅ Yes | ❌ No |
 | **Real IBM Quantum QPU Execution** | ❌ No | ✅ **Yes** |
 
-#### To submit jobs to real IBM hardware:
+#### To run directly on real IBM Quantum Hardware:
+```bash
+# 1. Submit a 3-qubit Grover search circuit to the least busy physical QPU:
+python run_ibm_quantum.py --token "YOUR_API_TOKEN" --qubits 3 --targets 101 --shots 2048
+
+# 2. Re-verify or inspect the live completed job record without re-waiting in queue:
+python run_ibm_quantum.py --job-id dbhnsic2d77s739d42pg
+```
+
+#### Real Verified Execution Metrics (`ibm_marrakesh` - 156-qubit Heron r2):
+- **Job ID:** [`dbhnsic2d77s739d42pg`](https://quantum.ibm.com/jobs/dbhnsic2d77s739d42pg)
+- **Target State |101> Success:** **71.44%** (1,463 hits / 2,048 shots)
+- **Zero-Noise Ideal Statevector:** **94.53%**
+- **Hardware Noise Degradation:** **24.43%**
+- **Physical 2-Qubit CZ Gates:** 39 (Transpiled Depth: 146)
+
+---
+
+### Part 4: Google Colab Interactive Notebook
+
+Open the complete benchmark suite, theoretical calculations, and real IBM Quantum hardware cells in Google Colab with one click:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/vibhaskesana/Grover-algo/blob/main/GroverLab_Colab_Visualizations.ipynb)
 ```cmd
 set IBM_QUANTUM_TOKEN="your_actual_ibm_quantum_api_token"
 python/venv/Scripts/python python/run_experiments.py
