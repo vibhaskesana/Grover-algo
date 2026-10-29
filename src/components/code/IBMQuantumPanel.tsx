@@ -163,11 +163,15 @@ print(f"Monitor job live at: https://quantum.ibm.com/jobs/{job.job_id()}")
 # 7. Retrieve & Print Results
 result = job.result()
 pub_result = result[0]
-bitstrings = pub_result.data.meas.get_bitstrings()
+data_bin = pub_result.data
 
 counts = {}
-for bs in bitstrings:
-    counts[bs] = counts.get(bs, 0) + 1
+for reg_name in ["c", "meas", "m", "cr"]:
+    if hasattr(data_bin, reg_name):
+        reg = getattr(data_bin, reg_name)
+        if hasattr(reg, "get_counts"):
+            counts = dict(reg.get_counts())
+            break
 
 target_hits = sum(counts.get(t, 0) for t in targets)
 p_hardware = target_hits / shots
@@ -349,7 +353,9 @@ print("="*50)
             className="w-full bg-[#09090c] border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500"
           >
             <option value="auto">Least Busy Operational QPU (Auto)</option>
+            <option value="ibm_marrakesh">ibm_marrakesh (156 Qubits - Heron r2)</option>
             <option value="ibm_fez">ibm_fez (156 Qubits - Heron r2)</option>
+            <option value="ibm_kingston">ibm_kingston (156 Qubits - Heron r2)</option>
             <option value="ibm_brisbane">ibm_brisbane (127 Qubits - Eagle r3)</option>
             <option value="ibm_kyoto">ibm_kyoto (127 Qubits - Eagle r3)</option>
             <option value="ibm_osaka">ibm_osaka (127 Qubits - Eagle r3)</option>

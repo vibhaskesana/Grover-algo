@@ -44,7 +44,10 @@ def run_on_ibm_hardware(
         service = None
         for ch in ["ibm_quantum_platform", "ibm_cloud"]:
             try:
-                service = QiskitRuntimeService(channel=ch, token=token)
+                kwargs = {"channel": ch, "token": token}
+                if ch == "ibm_cloud":
+                    kwargs["instance"] = "auto"
+                service = QiskitRuntimeService(**kwargs)
                 break
             except Exception:
                 continue
@@ -74,7 +77,19 @@ def run_on_ibm_hardware(
         pub_result = result[0]
         
         # Convert bitstring counts
-        bitstrings = pub_result.data.meas.get_bitstrings()
+        data_bin = pub_result.data
+        counts: Dict[str, int] = {}
+        for reg_name in ["c", "meas", "m", "cr"]:
+            if hasattr(data_bin, reg_name):
+                reg = getattr(data_bin, reg_name)
+                if hasattr(reg, "get_counts"):
+                    counts = dict(reg.get_counts())
+                    break
+                elif hasattr(reg, "get_bitstrings"):
+                    for bs in reg.get_bitstrings():
+                        counts[bs] = counts.get(bs, 0) + 1
+                    break
+        bitstrings = []
         counts: Dict[str, int] = {}
         for bs in bitstrings:
             counts[bs] = counts.get(bs, 0) + 1

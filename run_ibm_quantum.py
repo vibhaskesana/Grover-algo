@@ -226,6 +226,12 @@ def main():
         help="IBM Cloud service instance CRN (optional if account has default instance)"
     )
     parser.add_argument(
+        "--job-id",
+        type=str,
+        default=None,
+        help="Retrieve results of an already executed job ID without resubmitting"
+    )
+    parser.add_argument(
         "--optimization",
         type=int,
         choices=[0, 1, 2, 3],
@@ -280,7 +286,9 @@ def main():
     for ch in channels_to_try:
         try:
             kwargs = {"channel": ch, "token": token}
-            if args.instance:
+            if ch == "ibm_cloud":
+                kwargs["instance"] = args.instance or "auto"
+            elif args.instance:
                 kwargs["instance"] = args.instance
             service = QiskitRuntimeService(**kwargs)
             print(f"      [OK] Successfully authenticated via channel '{ch}'!")
@@ -325,55 +333,85 @@ def main():
         print(f"\n[ERROR] Failed to connect to backend: {e}")
         sys.exit(1)
 
-    # 5. Build and Transpile Circuit
-    print(f"\n[4/5] Building & Transpiling Grover Circuit (Optimization Level = {args.optimization})...")
-    qc = build_grover_circuit(n_qubits, targets, iterations)
-    print(f"      Abstract Circuit Depth: {qc.depth()}, Gate Operations: {dict(qc.count_ops())}")
-
-    transpiled_qc = transpile(qc, backend=backend, optimization_level=args.optimization)
-    t_depth = transpiled_qc.depth()
-    t_ops = dict(transpiled_qc.count_ops())
-    print(f"      Transpiled Depth      : {t_depth}")
-    print(f"      Physical Gates        : {t_ops}")
-
-    # 6. Submit Job to Hardware
-    print(f"\n[5/5] Submitting Job to Physical Quantum Computer ({backend.name})...")
-    print("      Using Qiskit Runtime SamplerV2 primitive...")
-    try:
-        sampler = Sampler(mode=backend)
-        job = sampler.run([transpiled_qc], shots=args.shots)
-        job_id = job.job_id()
-        print(f"      [OK] Job Submitted! Job ID: {job_id}")
-        print(f"      Monitor your job live at: https://quantum.ibm.com/jobs/{job_id}")
-        print("      Waiting for hardware execution to complete (polling status)...")
-
-        # Polling status
-        last_status = None
-        while True:
-            current_status = job.status()
-            if current_status != last_status:
-                print(f"      -> Current Job Status: {current_status}")
-                last_status = current_status
-            if current_status in ["DONE", "CANCELLED", "ERROR"]:
-                break
-            time.sleep(5)
-
-        if current_status != "DONE":
-            print(f"\n[ERROR] Job ended with non-successful status: {current_status}")
+    # 5. Build and Transpile Circuit / Retrieve Existing Job
+    if args.job_id:
+        print(f"\n[4/5] Retrieving existing job ID: {args.job_id}...")
+        try:
+            job = service.job(args.job_id)
+            backend_name = job.backend().name if hasattr(job, 'backend') and job.backend() else (args.backend or "IBM QPU")
+            job_id = args.job_id
+            print(f"      [OK] Job found! Backend: {backend_name} | Status: {job.status()}")
+            result = job.result()
+            pub_result = result[0]
+            data_bin = pub_result.data
+        except Exception as e:
+            print(f"\n[ERROR] Failed to retrieve job {args.job_id}: {e}")
             sys.exit(1)
+    else:
+        print(f"\n[4/5] Building & Transpiling Grover Circuit (Optimization Level = {args.optimization})...")
+        qc = build_grover_circuit(n_qubits, targets, iterations)
+        print(f"      Abstract Circuit Depth: {qc.depth()}, Gate Operations: {dict(qc.count_ops())}")
 
-        result = job.result()
-        pub_result = result[0]
-        bitstrings = pub_result.data.meas.get_bitstrings()
+        transpiled_qc = transpile(qc, backend=backend, optimization_level=args.optimization)
+        t_depth = transpiled_qc.depth()
+        t_ops = dict(transpiled_qc.count_ops())
+        print(f"      Transpiled Depth      : {t_depth}")
+        print(f"      Physical Gates        : {t_ops}")
 
-        # Aggregate counts
-        counts: Dict[str, int] = {}
-        for bs in bitstrings:
-            counts[bs] = counts.get(bs, 0) + 1
+        # 6. Submit Job to Hardware
+        print(f"\n[5/5] Submitting Job to Physical Quantum Computer ({backend.name})...")
+        print("      Using Qiskit Runtime SamplerV2 primitive...")
+        try:
+            sampler = Sampler(mode=backend)
+            job = sampler.run([transpiled_qc], shots=args.shots)
+            job_id = job.job_id()
+            backend_name = backend.name
+            print(f"      [OK] Job Submitted! Job ID: {job_id}")
+            print(f"      Monitor your job live at: https://quantum.ibm.com/jobs/{job_id}")
+            print("      Waiting for hardware execution to complete (polling status)...")
 
-    except Exception as e:
-        print(f"\n[ERROR] Runtime execution failed: {e}")
-        sys.exit(1)
+            # Polling status
+            last_status = None
+            while True:
+                current_status = job.status()
+                if current_status != last_status:
+                    print(f"      -> Current Job Status: {current_status}")
+                    last_status = current_status
+                if current_status in ["DONE", "CANCELLED", "ERROR"]:
+                    break
+                time.sleep(5)
+
+            if current_status != "DONE":
+                print(f"\n[ERROR] Job ended with non-successful status: {current_status}")
+                sys.exit(1)
+
+            result = job.result()
+            pub_result = result[0]
+            data_bin = pub_result.data
+        except Exception as e:
+            print(f"\n[ERROR] Runtime execution failed: {e}")
+            sys.exit(1)
+        
+    # Extract bitstring counts dynamically across any classical register name
+    counts: Dict[str, int] = {}
+    for reg_name in ["c", "meas", "m", "cr"]:
+        if hasattr(data_bin, reg_name):
+            reg = getattr(data_bin, reg_name)
+            if hasattr(reg, "get_counts"):
+                counts = dict(reg.get_counts())
+                break
+            elif hasattr(reg, "get_bitstrings"):
+                for bs in reg.get_bitstrings():
+                    counts[bs] = counts.get(bs, 0) + 1
+                break
+    
+    if not counts:
+        for field in dir(data_bin):
+            if not field.startswith("_"):
+                reg = getattr(data_bin, field)
+                if hasattr(reg, "get_counts"):
+                    counts = dict(reg.get_counts())
+                    break
 
     # 7. Analyze & Display Results
     print("\n" + "=" * 72)
@@ -385,7 +423,7 @@ def main():
     p_hardware = target_shots / total_shots if total_shots > 0 else 0.0
     relative_degradation = ((p_theory - p_hardware) / p_theory) * 100.0 if p_theory > 0 else 0.0
 
-    print(f"\nBackend                    : {backend.name}")
+    print(f"\nBackend                    : {backend_name}")
     print(f"Job ID                     : {job_id}")
     print(f"Total Measured Shots       : {total_shots}")
     print(f"Ideal Theoretical Prob     : {p_theory * 100:.2f}%")
